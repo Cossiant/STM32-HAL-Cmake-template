@@ -1,0 +1,19 @@
+# ===== 构建输出（CMake 预设：build/Debug、build/Release）=====
+/build/
+/cmake-build-*/
+compile_commands.json
+*.elf
+*.hex
+*.bin
+*.map
+*.su
+
+# ===== IDE / 编辑器（个人配置，完全不入库）=====
+/.idea/
+/.vscode/
+*.user
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db
+desktop.ini
