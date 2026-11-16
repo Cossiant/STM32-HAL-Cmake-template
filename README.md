@@ -144,8 +144,24 @@ openocd -f interface/stlink.cfg -f target/stm32f1x.cfg -c "program build/Debug/S
 1. `File → Open` 打开仓库根目录，选择 `Debug` 预设并构建一次；
 2. `Run → Edit Configurations… → + → OpenOCD Download & Run`；
 3. Target 选择 `STM32-HAL-Cmake-template`；
-4. Board config file 选择 OpenOCD 安装目录下的 `share/openocd/scripts/board/stm32f1_stlink.cfg`（不同安装方式路径不同）；
+4. **OpenOCD location** 选择 `openocd.exe`；**Board config file** 必须选择 `.cfg` 配置文件（见下方说明）；
 5. 点击 Debug，CLion 会自动下载固件、启动 GDB 并停在 `main()`。
+
+> **Board config file 该填什么？**
+>
+> CLion 会把这个字段原样加到 `-f` 参数后面，所以这里只能填 OpenOCD 的 Tcl 配置脚本（`.cfg`），**不能填 `openocd.exe`**。
+>
+> 注意很多 OpenOCD 发行版自带的 `board/stm32f103c8_blue_pill.cfg` 只 `source` 了 target、没有 `source` interface，单独使用会报 `Debug adapter does not support any transports`。推荐自己建一个同时包含 interface + target 的组合配置，例如保存为 `D:\Path\STM32\DevEnv\stm32f1_stlink.cfg`：
+>
+> ```tcl
+> source [find interface/stlink.cfg]
+> source [find target/stm32f1x.cfg]
+> reset_config none
+> ```
+>
+> 然后在 CLion 的 **Board config file** 里选择这个文件。
+>
+> **常见错误**：如果把 `openocd.exe` 填进 Board config file，OpenOCD 会把 Windows PE 文件当 Tcl 脚本解析，报 `invalid command name "MZ"`（`MZ` 是可执行文件头）。
 
 > 仓库不包含 `.idea` 目录：每个新 clone 打开时都需要按 CLion 提示初始化一次 CMake 配置，OpenOCD 运行配置也需要首次手动创建。这样可以避免把本机的 CMake 状态、路径和窗口布局带进仓库（JetBrains 官方推荐做法）。
 
@@ -353,8 +369,21 @@ int __io_putchar(int ch)
 
 - SWD 接线：`SWDIO(PA13)`、`SWCLK(PA14)`、`GND`、`3.3V`；`BOOT0` 接 GND；
 - 检查目标板供电、ST-Link 驱动与固件；
-- OpenOCD 配置选对（STM32F1 用 `target/stm32f1x.cfg` 或 `board/stm32f1_stlink.cfg`）；
+- OpenOCD 配置选对：STM32F1 需要 `interface/stlink.cfg` + `target/stm32f1x.cfg` 的组合配置（见「CLion + OpenOCD」一节）；
 - 若芯片被读保护或进入低功耗，先用 `openocd ... -c "init; reset halt"` 或 STM32CubeProgrammer 全片擦除。
+
+**Q：CLion 启动 OpenOCD 报 `invalid command name "MZ"`？**
+
+`Board config file` 填成了 `openocd.exe`（或其他可执行文件）。CLion 会把它原样加到 `-f` 参数后，OpenOCD 把 Windows PE 文件头 `MZ` 当 Tcl 命令解析。把该字段改成 `.cfg` 配置文件即可，详见「CLion + OpenOCD」一节。
+
+**Q：OpenOCD 报 `Debug adapter does not support any transports`？**
+
+Board config 只 `source` 了 target、没有 `source` interface（例如部分发行版自带的 `board/stm32f103c8_blue_pill.cfg`）。新建一个组合配置并在 CLion 中指向它：
+
+```tcl
+source [find interface/stlink.cfg]
+source [find target/stm32f1x.cfg]
+```
 
 **Q：修改 `.ioc` 重新生成后编译报错？**
 
